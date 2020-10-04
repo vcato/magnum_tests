@@ -1,0 +1,63 @@
+#!/bin/bash
+
+build_type="web"
+
+if [ ! -d corrade ]; then
+  git clone https://github.com/mosra/corrade.git || exit 1
+  (
+    cd corrade || exit 1
+    mkdir build || exit 1
+    cd build || exit 1
+    cmake .. || exit 1
+    make || exit 1
+  ) || exit 1
+fi
+
+export PATH=$PATH:$PWD/corrade/build/bin
+
+if [ ! -d magnum ]; then
+  git clone https://github.com/mosra/magnum.git || exit 1
+fi
+
+if [ ! -d toolchains ]; then
+  git clone https://github.com/mosra/toolchains.git || exit 1
+fi
+
+if [ ! -d magnum-integration ]; then
+  git clone https://github.com/mosra/magnum-integration.git || exit 1
+  cp magnum-integration/modules/* modules/. || exit 1
+fi
+
+web_build_dir=build_web
+desktop_build_dir=build_desktop
+
+(
+  build_dir=$desktop_build_dir
+  if [ ! -d $build_dir ]; then
+    mkdir $build_dir || exit 1
+  fi
+  cd $build_dir || exit 1
+  cmake \
+    -DCMAKE_BUILD_TYPE=Debug \
+    .. || exit 1
+  cmake --build . || exit 1
+) || exit 1
+
+
+(
+  install_dir=~/dev/website/magnum
+  build_dir=$web_build_dir
+  emsdk_dir=$HOME/dev/emsdk
+  . $emsdk_dir/emsdk_env.sh
+  if [ ! -d $build_dir ]; then
+    mkdir $build_dir || exit 1
+  fi
+  cd $build_dir || exit 1
+  cmake \
+    -DCMAKE_TOOLCHAIN_FILE="$PWD/../toolchains/generic/Emscripten-wasm.cmake" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$install_dir \
+    .. || exit 1
+  cmake --build . --target install || exit 1
+  cp Release/bin/MyApplication.wasm $install_dir/. || exit 1
+) || exit 1

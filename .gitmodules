@@ -1,0 +1,15 @@
+[submodule "corrade"]
+	path = corrade
+	url = ./corrade
+[submodule "magnum"]
+	path = magnum
+	url = ./magnum
+[submodule "toolchains"]
+	path = toolchains
+	url = ./toolchains/
+[submodule "imgui"]
+	path = imgui
+	url = ./imgui
+[submodule "magnum-integration"]
+	path = magnum-integration
+	url = ./magnum-integration/

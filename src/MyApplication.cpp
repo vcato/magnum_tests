@@ -89,7 +89,7 @@ void MyApplication::drawEvent() {
         stopTextInput();
 
     ImGui::Begin("Another Window", &_showAnotherWindow);
-    ImGui::Text("Hello, world!");
+    ImGui::Text("Hello, world2!");
     ImGui::End();
 
     /* Update application cursor */

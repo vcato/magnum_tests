@@ -1,7 +1,5 @@
 #!/bin/bash
 
-build_type="web"
-
 if [ ! -d corrade ]; then
   git clone https://github.com/mosra/corrade.git || exit 1
   (

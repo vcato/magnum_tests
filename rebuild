@@ -39,6 +39,7 @@ desktop_build_dir=build_desktop
   cd $build_dir || exit 1
   cmake \
     -DCMAKE_BUILD_TYPE=Debug \
+    -DWITH_SDL2APPLICATION=ON \
     .. || exit 1
   cmake --build . || exit 1
 ) || exit 1
@@ -56,6 +57,8 @@ desktop_build_dir=build_desktop
   cmake \
     -DCMAKE_TOOLCHAIN_FILE="$PWD/../toolchains/generic/Emscripten-wasm.cmake" \
     -DCMAKE_BUILD_TYPE=Release \
+    -DWITH_EMSCRIPTENAPPLICATION=ON \
+    -DCORRADE_TARGET_EMSCRIPTEN=ON \
     -DCMAKE_INSTALL_PREFIX=$install_dir \
     .. || exit 1
   cmake --build . --target install || exit 1

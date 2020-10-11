@@ -30,180 +30,180 @@ using std::cerr;
 
 class MyApplication: public Platform::Application
 {
-    public:
-        explicit MyApplication(const Arguments& arguments);
+  public:
+    explicit MyApplication(const Arguments& arguments);
 
-        void drawEvent() override;
+    void drawEvent() override;
 
-        void viewportEvent(ViewportEvent& event) override;
+    void viewportEvent(ViewportEvent& event) override;
 
-        void keyPressEvent(KeyEvent& event) override;
-        void keyReleaseEvent(KeyEvent& event) override;
+    void keyPressEvent(KeyEvent& event) override;
+    void keyReleaseEvent(KeyEvent& event) override;
 
-        void mousePressEvent(MouseEvent& event) override;
-        void mouseReleaseEvent(MouseEvent& event) override;
-        void mouseMoveEvent(MouseMoveEvent& event) override;
-        void mouseScrollEvent(MouseScrollEvent& event) override;
-        void textInputEvent(TextInputEvent& event) override;
+    void mousePressEvent(MouseEvent& event) override;
+    void mouseReleaseEvent(MouseEvent& event) override;
+    void mouseMoveEvent(MouseMoveEvent& event) override;
+    void mouseScrollEvent(MouseScrollEvent& event) override;
+    void textInputEvent(TextInputEvent& event) override;
 
-    private:
-        ImGuiIntegration::Context _imgui{NoCreate};
+  private:
+    ImGuiIntegration::Context _imgui{NoCreate};
 
-        bool _showAnotherWindow = false;
-        GL::Mesh _mesh;
-        Shaders::VertexColor2D _shader;
-        bool _toggle = false;
+    bool _showAnotherWindow = false;
+    GL::Mesh _mesh;
+    Shaders::VertexColor2D _shader;
+    bool _toggle = false;
 };
 
 
 MyApplication::MyApplication(const Arguments& arguments)
-: Platform::Application{
+  : Platform::Application{
     arguments,
-    Configuration{}
-      .setTitle("Magnum ImGui Example")
+      Configuration{}
+    .setTitle("Magnum ImGui Example")
       .setWindowFlags(Configuration::WindowFlag::Resizable)
   }
 {
-    _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(),
-        windowSize(), framebufferSize());
+  _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(),
+    windowSize(), framebufferSize());
 
-    /* Set up proper blending to be used by ImGui. There's a great chance
-       you'll need this exact behavior for the rest of your scene. If not, set
-       this only for the drawFrame() call. */
-    GL::Renderer::setBlendEquation(GL::Renderer::BlendEquation::Add,
-        GL::Renderer::BlendEquation::Add);
-    GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
-        GL::Renderer::BlendFunction::OneMinusSourceAlpha);
+  /* Set up proper blending to be used by ImGui. There's a great chance
+     you'll need this exact behavior for the rest of your scene. If not, set
+     this only for the drawFrame() call. */
+  GL::Renderer::setBlendEquation(GL::Renderer::BlendEquation::Add,
+    GL::Renderer::BlendEquation::Add);
+  GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
+    GL::Renderer::BlendFunction::OneMinusSourceAlpha);
 
-    struct TriangleVertex {
-      Vector2 position;
-      Color3 color;
-    };
+  struct TriangleVertex {
+    Vector2 position;
+    Color3 color;
+  };
 
-    const TriangleVertex data[] = {
-      {{-0.5, 0.5}, 0xff0000_rgbf},
-      {{ 0.5,-0.5}, 0x00ff00_rgbf},
-      {{ 0.5, 0.5}, 0x0000ff_rgbf},
-    };
+  const TriangleVertex data[] = {
+    {{-0.5, 0.5}, 0xff0000_rgbf},
+    {{ 0.5,-0.5}, 0x00ff00_rgbf},
+    {{ 0.5, 0.5}, 0x0000ff_rgbf},
+  };
 
-    GL::Buffer buffer;
-    buffer.setData(data);
+  GL::Buffer buffer;
+  buffer.setData(data);
 
-    _mesh.setCount(3)
-      .addVertexBuffer(
-        std::move(buffer),
-        /*offset*/0,
-        /*attributes*/
-        Shaders::VertexColor2D::Position(),
-        Shaders::VertexColor2D::Color3()
-      );
+  _mesh.setCount(3)
+    .addVertexBuffer(
+      std::move(buffer),
+      /*offset*/0,
+      /*attributes*/
+      Shaders::VertexColor2D::Position(),
+      Shaders::VertexColor2D::Color3()
+    );
 
 #if !defined(MAGNUM_TARGET_WEBGL) && !defined(CORRADE_TARGET_ANDROID)
-    /* Have some sane speed, please */
-    setMinimalLoopPeriod(16);
+  /* Have some sane speed, please */
+  setMinimalLoopPeriod(16);
 #endif
 }
 
 
 void MyApplication::drawEvent()
 {
-    GL::defaultFramebuffer.clear(
-      GL::FramebufferClear::Color |
-      GL::FramebufferClear::Depth
-    );
+  GL::defaultFramebuffer.clear(
+    GL::FramebufferClear::Color |
+    GL::FramebufferClear::Depth
+  );
 
-    if (_toggle) {
-      _shader.draw(_mesh);
-    }
+  if (_toggle) {
+    _shader.draw(_mesh);
+  }
 
-    _imgui.newFrame();
+  _imgui.newFrame();
 
-    /* Enable text input, if needed */
-    if (ImGui::GetIO().WantTextInput && !isTextInputActive())
-        startTextInput();
-    else if (!ImGui::GetIO().WantTextInput && isTextInputActive())
-        stopTextInput();
+  /* Enable text input, if needed */
+  if (ImGui::GetIO().WantTextInput && !isTextInputActive())
+    startTextInput();
+  else if (!ImGui::GetIO().WantTextInput && isTextInputActive())
+    stopTextInput();
 
-    ImGui::Begin("Another Window", &_showAnotherWindow);
-    ImGui::Text("Hello, world3!");
-    ImGui::Checkbox("Toggle", &_toggle);
-    ImGui::End();
+  ImGui::Begin("Another Window", &_showAnotherWindow);
+  ImGui::Text("Hello, world3!");
+  ImGui::Checkbox("Toggle", &_toggle);
+  ImGui::End();
 
-    /* Update application cursor */
-    _imgui.updateApplicationCursor(*this);
+  /* Update application cursor */
+  _imgui.updateApplicationCursor(*this);
 
-    /* Set appropriate states. If you only draw ImGui, it is sufficient to
-       just enable blending and scissor test in the constructor. */
-    GL::Renderer::enable(GL::Renderer::Feature::Blending);
-    GL::Renderer::enable(GL::Renderer::Feature::ScissorTest);
-    GL::Renderer::disable(GL::Renderer::Feature::FaceCulling);
-    GL::Renderer::disable(GL::Renderer::Feature::DepthTest);
+  /* Set appropriate states. If you only draw ImGui, it is sufficient to
+     just enable blending and scissor test in the constructor. */
+  GL::Renderer::enable(GL::Renderer::Feature::Blending);
+  GL::Renderer::enable(GL::Renderer::Feature::ScissorTest);
+  GL::Renderer::disable(GL::Renderer::Feature::FaceCulling);
+  GL::Renderer::disable(GL::Renderer::Feature::DepthTest);
 
-    _imgui.drawFrame();
+  _imgui.drawFrame();
 
-    /* Reset state. Only needed if you want to draw something else with
-       different state after. */
-    GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
-    GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
-    GL::Renderer::disable(GL::Renderer::Feature::ScissorTest);
-    GL::Renderer::disable(GL::Renderer::Feature::Blending);
+  /* Reset state. Only needed if you want to draw something else with
+     different state after. */
+  GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+  GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+  GL::Renderer::disable(GL::Renderer::Feature::ScissorTest);
+  GL::Renderer::disable(GL::Renderer::Feature::Blending);
 
-    swapBuffers();
-    redraw();
+  swapBuffers();
+  redraw();
 }
 
 
 void MyApplication::viewportEvent(ViewportEvent& event)
 {
-    GL::defaultFramebuffer.setViewport({{}, event.framebufferSize()});
+  GL::defaultFramebuffer.setViewport({{}, event.framebufferSize()});
 
-    _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
-        event.windowSize(), event.framebufferSize());
+  _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
+    event.windowSize(), event.framebufferSize());
 }
 
 
 void MyApplication::keyPressEvent(KeyEvent& event)
 {
-    if (_imgui.handleKeyPressEvent(event)) return;
+  if (_imgui.handleKeyPressEvent(event)) return;
 }
 
 
 void MyApplication::keyReleaseEvent(KeyEvent& event)
 {
-    if (_imgui.handleKeyReleaseEvent(event)) return;
+  if (_imgui.handleKeyReleaseEvent(event)) return;
 }
 
 
 void MyApplication::mousePressEvent(MouseEvent& event)
 {
-    if (_imgui.handleMousePressEvent(event)) return;
+  if (_imgui.handleMousePressEvent(event)) return;
 }
 
 
 void MyApplication::mouseReleaseEvent(MouseEvent& event)
 {
-    if (_imgui.handleMouseReleaseEvent(event)) return;
+  if (_imgui.handleMouseReleaseEvent(event)) return;
 }
 
 
 void MyApplication::mouseMoveEvent(MouseMoveEvent& event)
 {
-    if (_imgui.handleMouseMoveEvent(event)) return;
+  if (_imgui.handleMouseMoveEvent(event)) return;
 }
 
 
 void MyApplication::mouseScrollEvent(MouseScrollEvent& event)
 {
-    if (_imgui.handleMouseScrollEvent(event)) {
-        /* Prevent scrolling the page */
-        event.setAccepted();
-        return;
-    }
+  if (_imgui.handleMouseScrollEvent(event)) {
+    /* Prevent scrolling the page */
+    event.setAccepted();
+    return;
+  }
 }
 
 void MyApplication::textInputEvent(TextInputEvent& event)
 {
-    if (_imgui.handleTextInputEvent(event)) return;
+  if (_imgui.handleTextInputEvent(event)) return;
 }
 
 

@@ -119,9 +119,9 @@ void MyApplication::drawEvent()
     _imgui.newFrame();
 
     /* Enable text input, if needed */
-    if(ImGui::GetIO().WantTextInput && !isTextInputActive())
+    if (ImGui::GetIO().WantTextInput && !isTextInputActive())
         startTextInput();
-    else if(!ImGui::GetIO().WantTextInput && isTextInputActive())
+    else if (!ImGui::GetIO().WantTextInput && isTextInputActive())
         stopTextInput();
 
     ImGui::Begin("Another Window", &_showAnotherWindow);
@@ -164,37 +164,37 @@ void MyApplication::viewportEvent(ViewportEvent& event)
 
 void MyApplication::keyPressEvent(KeyEvent& event)
 {
-    if(_imgui.handleKeyPressEvent(event)) return;
+    if (_imgui.handleKeyPressEvent(event)) return;
 }
 
 
 void MyApplication::keyReleaseEvent(KeyEvent& event)
 {
-    if(_imgui.handleKeyReleaseEvent(event)) return;
+    if (_imgui.handleKeyReleaseEvent(event)) return;
 }
 
 
 void MyApplication::mousePressEvent(MouseEvent& event)
 {
-    if(_imgui.handleMousePressEvent(event)) return;
+    if (_imgui.handleMousePressEvent(event)) return;
 }
 
 
 void MyApplication::mouseReleaseEvent(MouseEvent& event)
 {
-    if(_imgui.handleMouseReleaseEvent(event)) return;
+    if (_imgui.handleMouseReleaseEvent(event)) return;
 }
 
 
 void MyApplication::mouseMoveEvent(MouseMoveEvent& event)
 {
-    if(_imgui.handleMouseMoveEvent(event)) return;
+    if (_imgui.handleMouseMoveEvent(event)) return;
 }
 
 
 void MyApplication::mouseScrollEvent(MouseScrollEvent& event)
 {
-    if(_imgui.handleMouseScrollEvent(event)) {
+    if (_imgui.handleMouseScrollEvent(event)) {
         /* Prevent scrolling the page */
         event.setAccepted();
         return;
@@ -203,7 +203,7 @@ void MyApplication::mouseScrollEvent(MouseScrollEvent& event)
 
 void MyApplication::textInputEvent(TextInputEvent& event)
 {
-    if(_imgui.handleTextInputEvent(event)) return;
+    if (_imgui.handleTextInputEvent(event)) return;
 }
 
 

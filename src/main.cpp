@@ -104,6 +104,7 @@ MyApplication::MyApplication(const Arguments& arguments)
 #endif
 }
 
+
 void MyApplication::drawEvent()
 {
     GL::defaultFramebuffer.clear(
@@ -151,34 +152,48 @@ void MyApplication::drawEvent()
     redraw();
 }
 
-void MyApplication::viewportEvent(ViewportEvent& event) {
+
+void MyApplication::viewportEvent(ViewportEvent& event)
+{
     GL::defaultFramebuffer.setViewport({{}, event.framebufferSize()});
 
     _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
         event.windowSize(), event.framebufferSize());
 }
 
-void MyApplication::keyPressEvent(KeyEvent& event) {
+
+void MyApplication::keyPressEvent(KeyEvent& event)
+{
     if(_imgui.handleKeyPressEvent(event)) return;
 }
 
-void MyApplication::keyReleaseEvent(KeyEvent& event) {
+
+void MyApplication::keyReleaseEvent(KeyEvent& event)
+{
     if(_imgui.handleKeyReleaseEvent(event)) return;
 }
 
-void MyApplication::mousePressEvent(MouseEvent& event) {
+
+void MyApplication::mousePressEvent(MouseEvent& event)
+{
     if(_imgui.handleMousePressEvent(event)) return;
 }
 
-void MyApplication::mouseReleaseEvent(MouseEvent& event) {
+
+void MyApplication::mouseReleaseEvent(MouseEvent& event)
+{
     if(_imgui.handleMouseReleaseEvent(event)) return;
 }
 
-void MyApplication::mouseMoveEvent(MouseMoveEvent& event) {
+
+void MyApplication::mouseMoveEvent(MouseMoveEvent& event)
+{
     if(_imgui.handleMouseMoveEvent(event)) return;
 }
 
-void MyApplication::mouseScrollEvent(MouseScrollEvent& event) {
+
+void MyApplication::mouseScrollEvent(MouseScrollEvent& event)
+{
     if(_imgui.handleMouseScrollEvent(event)) {
         /* Prevent scrolling the page */
         event.setAccepted();
@@ -186,7 +201,8 @@ void MyApplication::mouseScrollEvent(MouseScrollEvent& event) {
     }
 }
 
-void MyApplication::textInputEvent(TextInputEvent& event) {
+void MyApplication::textInputEvent(TextInputEvent& event)
+{
     if(_imgui.handleTextInputEvent(event)) return;
 }
 

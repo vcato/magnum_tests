@@ -3,6 +3,7 @@
 #include <Magnum/Math/Color.h>
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/ImGuiIntegration/Context.hpp>
+#include <Magnum/Shaders/VertexColor.h>
 
 #ifdef CORRADE_TARGET_ANDROID
 #include <Magnum/Platform/AndroidApplication.h>
@@ -15,13 +16,16 @@
 namespace Math = Magnum::Math;
 namespace Platform = Magnum::Platform;
 namespace ImGuiIntegration = Magnum::ImGuiIntegration;
+namespace Shaders = Magnum::Shaders;
 namespace GL = Magnum::GL;
 using Color4 = Magnum::Color4;
 using Float = Magnum::Float;
 using Double = Magnum::Double;
 using Magnum::NoCreate;
 using Magnum::Vector2;
+using Magnum::Color3;
 using namespace Math::Literals;
+using std::cerr;
 
 
 class MyApplication: public Platform::Application
@@ -45,10 +49,10 @@ class MyApplication: public Platform::Application
     private:
         ImGuiIntegration::Context _imgui{NoCreate};
 
-        //bool _showDemoWindow = true;
         bool _showAnotherWindow = false;
-        Color4 _clearColor = 0x72909aff_rgbaf;
-        //Float _floatValue = 0.0f;
+        GL::Mesh _mesh;
+        Shaders::VertexColor2D _shader;
+        bool _toggle = false;
 };
 
 
@@ -71,14 +75,45 @@ MyApplication::MyApplication(const Arguments& arguments)
     GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
         GL::Renderer::BlendFunction::OneMinusSourceAlpha);
 
+    struct TriangleVertex {
+      Vector2 position;
+      Color3 color;
+    };
+
+    const TriangleVertex data[] = {
+      {{-0.5, 0.5}, 0xff0000_rgbf},
+      {{ 0.5,-0.5}, 0x00ff00_rgbf},
+      {{ 0.5, 0.5}, 0x0000ff_rgbf},
+    };
+
+    GL::Buffer buffer;
+    buffer.setData(data);
+
+    _mesh.setCount(3)
+      .addVertexBuffer(
+        std::move(buffer),
+        /*offset*/0,
+        /*attributes*/
+        Shaders::VertexColor2D::Position(),
+        Shaders::VertexColor2D::Color3()
+      );
+
 #if !defined(MAGNUM_TARGET_WEBGL) && !defined(CORRADE_TARGET_ANDROID)
     /* Have some sane speed, please */
     setMinimalLoopPeriod(16);
 #endif
 }
 
-void MyApplication::drawEvent() {
-    GL::defaultFramebuffer.clear(GL::FramebufferClear::Color);
+void MyApplication::drawEvent()
+{
+    GL::defaultFramebuffer.clear(
+      GL::FramebufferClear::Color |
+      GL::FramebufferClear::Depth
+    );
+
+    if (_toggle) {
+      _shader.draw(_mesh);
+    }
 
     _imgui.newFrame();
 
@@ -89,7 +124,8 @@ void MyApplication::drawEvent() {
         stopTextInput();
 
     ImGui::Begin("Another Window", &_showAnotherWindow);
-    ImGui::Text("Hello, world2!");
+    ImGui::Text("Hello, world3!");
+    ImGui::Checkbox("Toggle", &_toggle);
     ImGui::End();
 
     /* Update application cursor */

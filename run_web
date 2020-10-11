@@ -1,0 +1,3 @@
+#!/bin/sh
+cd ~/dev/website/magnum
+python3 -m http.server

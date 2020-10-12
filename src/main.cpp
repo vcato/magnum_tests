@@ -1,4 +1,5 @@
 #include <iostream>
+#include <Magnum/Math/Vector2.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/GL/Renderer.h>
@@ -13,11 +14,15 @@
 #include <Magnum/Platform/Sdl2Application.h>
 #endif
 
+#define ENABLE_DEBUG_OUTPUT 0
+
+
 namespace Math = Magnum::Math;
 namespace Platform = Magnum::Platform;
 namespace ImGuiIntegration = Magnum::ImGuiIntegration;
 namespace Shaders = Magnum::Shaders;
 namespace GL = Magnum::GL;
+using std::ostream;
 using Color4 = Magnum::Color4;
 using Float = Magnum::Float;
 using Double = Magnum::Double;
@@ -25,7 +30,17 @@ using Magnum::NoCreate;
 using Magnum::Vector2;
 using Magnum::Color3;
 using namespace Math::Literals;
+
+#if ENABLE_DEBUG_OUTPUT
 using std::cerr;
+
+
+static ostream& operator<<(ostream&stream, const Magnum::Vector2i &v)
+{
+  stream << "Vector2i(" << v.x() << "," << v.y() << ")";
+  return stream;
+}
+#endif
 
 
 class MyApplication: public Platform::Application
@@ -50,9 +65,10 @@ class MyApplication: public Platform::Application
     ImGuiIntegration::Context _imgui{NoCreate};
 
     bool _showAnotherWindow = false;
-    GL::Mesh _mesh;
     Shaders::VertexColor2D _shader;
     bool _toggle = false;
+    bool _mouse_is_down = false;
+    Vector2 _test = {-0.5, 0.5};
 };
 
 
@@ -64,8 +80,12 @@ MyApplication::MyApplication(const Arguments& arguments)
       .setWindowFlags(Configuration::WindowFlag::Resizable)
   }
 {
-  _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(),
-    windowSize(), framebufferSize());
+  _imgui =
+    ImGuiIntegration::Context(
+      /*size*/Vector2{windowSize()}/dpiScaling(),
+      windowSize(),
+      framebufferSize()
+    );
 
   /* Set up proper blending to be used by ImGui. There's a great chance
      you'll need this exact behavior for the rest of your scene. If not, set
@@ -74,29 +94,6 @@ MyApplication::MyApplication(const Arguments& arguments)
     GL::Renderer::BlendEquation::Add);
   GL::Renderer::setBlendFunction(GL::Renderer::BlendFunction::SourceAlpha,
     GL::Renderer::BlendFunction::OneMinusSourceAlpha);
-
-  struct TriangleVertex {
-    Vector2 position;
-    Color3 color;
-  };
-
-  const TriangleVertex data[] = {
-    {{-0.5, 0.5}, 0xff0000_rgbf},
-    {{ 0.5,-0.5}, 0x00ff00_rgbf},
-    {{ 0.5, 0.5}, 0x0000ff_rgbf},
-  };
-
-  GL::Buffer buffer;
-  buffer.setData(data);
-
-  _mesh.setCount(3)
-    .addVertexBuffer(
-      std::move(buffer),
-      /*offset*/0,
-      /*attributes*/
-      Shaders::VertexColor2D::Position(),
-      Shaders::VertexColor2D::Color3()
-    );
 
 #if !defined(MAGNUM_TARGET_WEBGL) && !defined(CORRADE_TARGET_ANDROID)
   /* Have some sane speed, please */
@@ -113,7 +110,31 @@ void MyApplication::drawEvent()
   );
 
   if (_toggle) {
-    _shader.draw(_mesh);
+    struct TriangleVertex {
+      Vector2 position;
+      Color3 color;
+    };
+
+    const TriangleVertex data[] = {
+      {{_test.x(), _test.y()}, 0xff0000_rgbf},
+      {{ 0.5,-0.5}, 0x00ff00_rgbf},
+      {{ 0.5, 0.5}, 0x0000ff_rgbf},
+    };
+
+    GL::Buffer buffer;
+    buffer.setData(data);
+
+    GL::Mesh mesh;
+    mesh.setCount(3)
+      .addVertexBuffer(
+        std::move(buffer),
+        /*offset*/0,
+        /*attributes*/
+        Shaders::VertexColor2D::Position(),
+        Shaders::VertexColor2D::Color3()
+      );
+
+    _shader.draw(mesh);
   }
 
   _imgui.newFrame();
@@ -157,8 +178,11 @@ void MyApplication::viewportEvent(ViewportEvent& event)
 {
   GL::defaultFramebuffer.setViewport({{}, event.framebufferSize()});
 
-  _imgui.relayout(Vector2{event.windowSize()}/event.dpiScaling(),
-    event.windowSize(), event.framebufferSize());
+  _imgui.relayout(
+    Vector2{event.windowSize()}/event.dpiScaling(),
+    event.windowSize(),
+    event.framebufferSize()
+  );
 }
 
 
@@ -174,21 +198,56 @@ void MyApplication::keyReleaseEvent(KeyEvent& event)
 }
 
 
+static Magnum::Vector2
+viewPos(
+  const Magnum::Vector2i &window_pos,
+  const Magnum::Vector2i &window_size
+)
+{
+  float x = 2*(window_pos.x() / float(window_size.x())) - 1;
+  float y = 1 - 2*(window_pos.y() / float(window_size.y()));
+  return Magnum::Vector2(x,y);
+}
+
+
+static MyApplication::MouseEvent::Button mouseButton()
+{
+  return MyApplication::MouseEvent::Button::Left;
+}
+
+
 void MyApplication::mousePressEvent(MouseEvent& event)
 {
-  if (_imgui.handleMousePressEvent(event)) return;
+  if (_imgui.handleMousePressEvent(event)) {
+    return;
+  }
+
+  if (event.button() == mouseButton()) {
+    _mouse_is_down = true;
+    _test = viewPos(event.position(), windowSize());
+  }
 }
 
 
 void MyApplication::mouseReleaseEvent(MouseEvent& event)
 {
   if (_imgui.handleMouseReleaseEvent(event)) return;
+
+  if (event.button() == mouseButton()) {
+    _mouse_is_down = false;
+  }
 }
 
 
 void MyApplication::mouseMoveEvent(MouseMoveEvent& event)
 {
-  if (_imgui.handleMouseMoveEvent(event)) return;
+  if (_imgui.handleMouseMoveEvent(event)) {
+    return;
+  }
+
+  if (_mouse_is_down) {
+    _test = viewPos(event.position(), windowSize());
+  }
 }
 
 

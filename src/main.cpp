@@ -1,10 +1,11 @@
 #include <iostream>
 #include <Magnum/Math/Vector2.h>
+#include <Magnum/Math/Vector3.h>
+#include <Magnum/Math/Matrix4.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/ImGuiIntegration/Context.hpp>
-#include <Magnum/Shaders/VertexColor.h>
 
 #ifdef CORRADE_TARGET_ANDROID
 #include <Magnum/Platform/AndroidApplication.h>
@@ -16,6 +17,8 @@
 
 #define ENABLE_DEBUG_OUTPUT 0
 
+
+#include <Magnum/Shaders/Phong.h>
 
 namespace Math = Magnum::Math;
 namespace Platform = Magnum::Platform;
@@ -65,10 +68,14 @@ class MyApplication: public Platform::Application
     ImGuiIntegration::Context _imgui{NoCreate};
 
     bool _showAnotherWindow = false;
-    Shaders::VertexColor2D _shader;
+    Shaders::Phong _shader;
     bool _toggle = false;
     bool _mouse_is_down = false;
-    Vector2 _test = {-0.5, 0.5};
+    Magnum::Vector2i _mouse_down_pos;
+    Magnum::Math::Rad<float> _mouse_down_rot_x;
+    Magnum::Math::Rad<float> _mouse_down_rot_y;
+    Magnum::Math::Rad<float> _rot_x{0};
+    Magnum::Math::Rad<float> _rot_y{0};
 };
 
 
@@ -111,14 +118,17 @@ void MyApplication::drawEvent()
 
   if (_toggle) {
     struct TriangleVertex {
-      Vector2 position;
+      Magnum::Vector3 position;
+      Magnum::Vector3 normal;
       Color3 color;
     };
 
+    Vector2 corner = {-0.5, 0.5};
+
     const TriangleVertex data[] = {
-      {{_test.x(), _test.y()}, 0xff0000_rgbf},
-      {{ 0.5,-0.5}, 0x00ff00_rgbf},
-      {{ 0.5, 0.5}, 0x0000ff_rgbf},
+      {{corner.x()  , corner.y()  , 0}, {0,0,1}, 0xff0000_rgbf},
+      {{corner.x()+1, corner.y()-1, 0}, {0,0,1}, 0x00ff00_rgbf},
+      {{corner.x()+1, corner.y()  , 0}, {0,0,1}, 0x0000ff_rgbf},
     };
 
     GL::Buffer buffer;
@@ -130,10 +140,28 @@ void MyApplication::drawEvent()
         std::move(buffer),
         /*offset*/0,
         /*attributes*/
-        Shaders::VertexColor2D::Position(),
-        Shaders::VertexColor2D::Color3()
+        Shaders::Phong::Position(),
+        Shaders::Phong::Normal(),
+        Shaders::Phong::Color3()
       );
 
+    using Matrix = Magnum::Matrix4;
+
+    Matrix transformation_matrix =
+      Matrix::translation(Magnum::Vector3::zAxis(-5));
+
+    transformation_matrix =
+      transformation_matrix *
+      Matrix::rotationX(_rot_x) *
+      Matrix::rotationY(_rot_y);
+
+    Matrix projection_matrix =
+      Matrix::perspectiveProjection(35.0_degf, 1.0f, 0.001f, 100.0f);
+
+    _shader.setDiffuseColor(0x0000ff_rgbf);
+    _shader.setTransformationMatrix(transformation_matrix);
+    _shader.setNormalMatrix(transformation_matrix.normalMatrix());
+    _shader.setProjectionMatrix(projection_matrix);
     _shader.draw(mesh);
   }
 
@@ -198,6 +226,7 @@ void MyApplication::keyReleaseEvent(KeyEvent& event)
 }
 
 
+#if 0
 static Magnum::Vector2
 viewPos(
   const Magnum::Vector2i &window_pos,
@@ -208,6 +237,7 @@ viewPos(
   float y = 1 - 2*(window_pos.y() / float(window_size.y()));
   return Magnum::Vector2(x,y);
 }
+#endif
 
 
 static MyApplication::MouseEvent::Button mouseButton()
@@ -224,7 +254,9 @@ void MyApplication::mousePressEvent(MouseEvent& event)
 
   if (event.button() == mouseButton()) {
     _mouse_is_down = true;
-    _test = viewPos(event.position(), windowSize());
+    _mouse_down_pos = event.position();
+    _mouse_down_rot_x = _rot_x;
+    _mouse_down_rot_y = _rot_y;
   }
 }
 
@@ -246,7 +278,11 @@ void MyApplication::mouseMoveEvent(MouseMoveEvent& event)
   }
 
   if (_mouse_is_down) {
-    _test = viewPos(event.position(), windowSize());
+    Magnum::Vector2i delta = event.position() - _mouse_down_pos;
+    using Deg = Magnum::Math::Deg<float>;
+    using Rad = Magnum::Math::Rad<float>;
+    _rot_x = _mouse_down_rot_x + Rad(Deg(delta.y()));
+    _rot_y = _mouse_down_rot_y + Rad(Deg(delta.x()));
   }
 }
 

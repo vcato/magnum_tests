@@ -6,6 +6,9 @@
 #include <Magnum/Math/Color.h>
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/ImGuiIntegration/Context.hpp>
+#include <Magnum/Primitives/Cube.h>
+#include <Magnum/Trade/MeshData.h>
+#include <Magnum/MeshTools/Interleave.h>
 
 #ifdef CORRADE_TARGET_ANDROID
 #include <Magnum/Platform/AndroidApplication.h>
@@ -117,33 +120,40 @@ void MyApplication::drawEvent()
   );
 
   if (_toggle) {
-    struct TriangleVertex {
-      Magnum::Vector3 position;
-      Magnum::Vector3 normal;
-      Color3 color;
-    };
+    Magnum::Trade::MeshData cube = Magnum::Primitives::cubeSolid();
+    GL::Mesh mesh{cube.primitive()};
+    GL::Buffer vertices;
 
-    Vector2 corner = {-0.5, 0.5};
+    vertices.setData(
+      Magnum::MeshTools::interleave(
+        cube.positions3DAsArray(),
+        cube.normalsAsArray()
+      )
+    );
 
-    const TriangleVertex data[] = {
-      {{corner.x()  , corner.y()  , 0}, {0,0,1}, 0xff0000_rgbf},
-      {{corner.x()+1, corner.y()-1, 0}, {0,0,1}, 0x00ff00_rgbf},
-      {{corner.x()+1, corner.y()  , 0}, {0,0,1}, 0x0000ff_rgbf},
-    };
-
-    GL::Buffer buffer;
-    buffer.setData(data);
-
-    GL::Mesh mesh;
-    mesh.setCount(3)
-      .addVertexBuffer(
-        std::move(buffer),
-        /*offset*/0,
-        /*attributes*/
+    mesh.addVertexBuffer(
+      std::move(vertices),
+      /*offset*/0,
+      /*attributes*/
         Shaders::Phong::Position(),
-        Shaders::Phong::Normal(),
-        Shaders::Phong::Color3()
+        Shaders::Phong::Normal()
+    );
+
+    if (cube.isIndexed()) {
+      GL::Buffer indices(GL::Buffer::TargetHint::ElementArray);
+      indices.setData(cube.indicesAsArray());
+
+      mesh.setIndexBuffer(
+        std::move(indices),
+        /*offset*/0,
+        Magnum::MeshIndexType::UnsignedInt
       );
+
+      mesh.setCount(cube.indexCount());
+    }
+    else {
+      mesh.setCount(cube.vertexCount());
+    }
 
     using Matrix = Magnum::Matrix4;
 
@@ -155,8 +165,27 @@ void MyApplication::drawEvent()
       Matrix::rotationX(_rot_x) *
       Matrix::rotationY(_rot_y);
 
+    float near_clip = 0.001;
+
+    float size_x = 1;
+    float size_y = 1;
+
+    if (windowSize().x() > windowSize().y()) {
+      size_x = windowSize().x() / float(windowSize().y());
+    }
+    else {
+      size_y = windowSize().y() / float(windowSize().x());
+    }
+
+    Magnum::Vector2 near_size = {size_x*near_clip, size_y*near_clip};
+
     Matrix projection_matrix =
-      Matrix::perspectiveProjection(35.0_degf, 1.0f, 0.001f, 100.0f);
+      Matrix::perspectiveProjection(
+        near_size,
+        // /*fov_x*/35.0_degf,
+        // /*ratio*/(windowSize().x() / float(windowSize().y())),
+        near_clip,
+        /*far*/100.0f);
 
     _shader.setDiffuseColor(0x0000ff_rgbf);
     _shader.setTransformationMatrix(transformation_matrix);
